@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>P-CRM</title>
+<style>
+body{font-family:Arial;background:#eef2f7;text-align:center;padding-top:100px}
+.card{background:white;padding:40px;border-radius:12px;display:inline-block;box-shadow:0 5px 15px rgba(0,0,0,0.1)}
+button{padding:15px 30px;margin:10px;font-size:18px;border:none;border-radius:8px;cursor:pointer}
+.admin{background:#007bff;color:white}
+.user{background:#28a745;color:white}
+</style>
+</head>
+<body>
+
+<div class="card">
+<h2>Welcome to Smart P-CRM</h2>
+<p>Select your role</p>
+
+<button class="admin" onclick="go('admin')">Admin</button>
+<button class="user" onclick="go('citizen')">Citizen</button>
+</div>
+
+<script>
+function go(role){
+  localStorage.setItem("role", role);
+  window.location="login.html";
+}
+</script>
+
+</body>
+</html>

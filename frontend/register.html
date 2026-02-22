@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Citizen Registration</title>
+<style>
+body{font-family:Arial;background:#eef2f7;text-align:center;padding-top:80px}
+.card{background:white;padding:25px;border-radius:10px;display:inline-block}
+input,button{padding:10px;margin:8px;width:220px}
+button{background:#22c55e;color:white;border:none}
+</style>
+</head>
+<body>
+
+<div class="card">
+<h2>Citizen Registration</h2>
+
+<input id="name" placeholder="Full Name"><br>
+<input id="phone" placeholder="Phone Number"><br>
+<input id="pass" type="password" placeholder="Password"><br>
+
+<button onclick="register()">Register</button>
+
+<p id="msg"></p>
+</div>
+
+<script>
+async function register(){
+  const res = await fetch("/register",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+      name:name.value,
+      phone:phone.value,
+      password:pass.value
+    })
+  });
+
+  const text = await res.text();
+  msg.innerText=text;
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login</title>
+<style>
+body{
+  font-family:Arial;
+  background:#eef2f7;
+  text-align:center;
+  padding-top:100px;
+}
+.card{
+  background:white;
+  padding:30px;
+  border-radius:12px;
+  display:inline-block;
+  box-shadow:0 5px 15px rgba(0,0,0,0.1);
+}
+input,button{
+  padding:12px;
+  margin:8px;
+  width:220px;
+}
+button{
+  background:#2563eb;
+  color:white;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+.link{
+  color:#2563eb;
+  cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+<h2 id="title"></h2>
+
+<input id="phone" placeholder="Phone Number"><br>
+<input id="pass" type="password" placeholder="Password"><br>
+
+<button onclick="login()">Login</button>
+
+<p id="registerLink" class="link"></p>
+<p id="msg"></p>
+
+</div>
+
+<script>
+const role = localStorage.getItem("role") || "citizen";
+
+document.getElementById("title").innerText =
+  role === "admin" ? "ADMIN LOGIN" : "CITIZEN LOGIN";
+
+// show register only for citizens
+if(role === "citizen"){
+  document.getElementById("registerLink").innerText = "New citizen? Register";
+  document.getElementById("registerLink").onclick = () => {
+    window.location="register.html";
+  };
+}
+
+async function login(){
+  const res = await fetch("/login",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    credentials:"include",
+    body: JSON.stringify({
+      phone: phone.value,
+      password: pass.value,
+      role: role
+    })
+  });
+
+  const text = await res.text();
+
+  if(text.includes("successful")){
+    if(role==="admin") window.location="dashboard.html";
+    else window.location="user.html";
+  } else {
+    msg.innerText = text;
+  }
+}
+</script>
+
+</body>
+</html>

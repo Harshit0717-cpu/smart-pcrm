@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>P-CRM Admin Dashboard</title>
+
+<!-- Socket.io for realtime -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<style>
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#eef2f7;
+}
+
+header{
+  background:#1e293b;
+  color:white;
+  padding:15px 30px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.logout{
+  background:#ef4444;
+  border:none;
+  padding:8px 14px;
+  color:white;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+.container{
+  padding:20px;
+}
+
+/* STAT CARDS */
+
+.stats{
+  display:flex;
+  gap:20px;
+  flex-wrap:wrap;
+  margin-bottom:20px;
+}
+
+.card{
+  flex:1;
+  min-width:180px;
+  background:white;
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 3px 10px rgba(0,0,0,0.08);
+}
+
+.card h3{
+  margin:0;
+  font-size:26px;
+}
+
+.card p{
+  margin:5px 0 0;
+  color:gray;
+}
+
+/* TABLE */
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:white;
+  border-radius:10px;
+  overflow:hidden;
+  box-shadow:0 3px 10px rgba(0,0,0,0.08);
+}
+
+th{
+  background:#2563eb;
+  color:white;
+  padding:12px;
+}
+
+td{
+  padding:10px;
+  border-bottom:1px solid #eee;
+  text-align:center;
+}
+
+.status{
+  padding:5px 10px;
+  border-radius:12px;
+  color:white;
+  font-size:12px;
+}
+
+.assigned{ background:#f59e0b }
+.resolved{ background:#10b981 }
+.progress{ background:#3b82f6 }
+
+.high{
+  color:#dc2626;
+  font-weight:bold;
+}
+
+img{
+  width:60px;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+/* MODAL */
+
+.modal{
+  display:none;
+  position:fixed;
+  top:0; left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.6);
+  justify-content:center;
+  align-items:center;
+}
+
+.modal img{
+  max-width:80%;
+  border-radius:10px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>Smart P-CRM Dashboard</h2>
+  <button class="logout" onclick="logout()">Logout</button>
+</header>
+
+<div class="container">
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="card">
+      <h3 id="total">0</h3>
+      <p>Total Complaints</p>
+    </div>
+
+    <div class="card">
+      <h3 id="high">0</h3>
+      <p>High Priority</p>
+    </div>
+
+    <div class="card">
+      <h3 id="resolved">0</h3>
+      <p>Resolved</p>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Issue</th>
+        <th>Ward</th>
+        <th>Priority</th>
+        <th>Department</th>
+        <th>Status</th>
+        <th>Photo</th>
+        <th>Update</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+</div>
+
+<!-- IMAGE MODAL -->
+<div class="modal" id="modal" onclick="closeModal()">
+  <img id="modalImg">
+</div>
+
+<script>
+
+const socket = io("http://localhost:5000");
+
+// ⚡ realtime triggers
+socket.on("newComplaint", loadDashboard);
+socket.on("statusUpdated", loadDashboard);
+
+async function loadDashboard(){
+  const res = await fetch("http://localhost:5000/complaints", {credentials:"include"});
+  const data = await res.json();
+
+  document.getElementById("total").innerText = data.length;
+  document.getElementById("high").innerText = data.filter(c=>c.priority==="High").length;
+  document.getElementById("resolved").innerText = data.filter(c=>c.status==="Resolved").length;
+
+  const body = document.getElementById("tableBody");
+  body.innerHTML="";
+
+  data.forEach(c=>{
+    const row=document.createElement("tr");
+
+    const statusClass =
+      c.status==="Resolved" ? "resolved" :
+      c.status==="In Progress" ? "progress" :
+      "assigned";
+
+    row.innerHTML=`
+      <td>${c.citizen_name}</td>
+      <td>${c.issue}</td>
+      <td>${c.ward}</td>
+      <td class="${c.priority==='High'?'high':''}">${c.priority}</td>
+      <td>${c.assigned_to}</td>
+      <td><span class="status ${statusClass}">${c.status}</span></td>
+      <td>${c.photo ? `<img src="http://localhost:5000/uploads/${c.photo}" onclick="showImg(this.src)">` : "—"}</td>
+      <td>
+        <select onchange="updateStatus('${c._id}', this.value)">
+          <option>Change</option>
+          <option>In Progress</option>
+          <option>Resolved</option>
+        </select>
+      </td>
+    `;
+    body.appendChild(row);
+  });
+}
+
+async function updateStatus(id,status){
+  await fetch(`http://localhost:5000/complaints/${id}/status`,{
+    method:"PUT",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({status}),
+    credentials:"include"
+  });
+}
+
+function showImg(src){
+  modal.style.display="flex";
+  modalImg.src=src;
+}
+
+function closeModal(){
+  modal.style.display="none";
+}
+
+async function logout(){
+  await fetch("http://localhost:5000/logout",{credentials:"include"});
+  window.location="index.html";
+}
+
+// load first time
+loadDashboard();
+
+</script>
+
+</body>
+</html>
